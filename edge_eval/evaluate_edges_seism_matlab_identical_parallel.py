@@ -169,6 +169,7 @@ def evaluate_edge_maps_parallel(
     max_candidate_pairs: Optional[int] = None,
     max_match_product: Optional[int] = None,
     n_workers: Optional[int] = None,
+    disable_tqdm: Optional[bool] = None,
 ) -> Dict:
     """
     Parallel version of evaluate_edge_maps_matlab_identical().
@@ -317,6 +318,10 @@ def evaluate_edge_maps_parallel(
     # safer for third-party C extensions.
     mp_context = multiprocessing.get_context('spawn')
 
+    # env var lets callers (e.g. batch/SLURM jobs) suppress the bar without code changes
+    if disable_tqdm is None:
+        disable_tqdm = bool(int(os.environ.get('TQDM_DISABLE', '0')))
+
     with ProcessPoolExecutor(max_workers=n_workers, mp_context=mp_context) as executor:
         # Submit all jobs and wrap with tqdm for progress display
         futures = {
@@ -328,7 +333,7 @@ def evaluate_edge_maps_parallel(
         ordered_results: List[Optional[Dict]] = [None] * n_images
         completed = 0
 
-        with tqdm(total=n_images, desc="[PARALLEL]", unit="img") as pbar:
+        with tqdm(total=n_images, desc="[PARALLEL]", unit="img", disable=disable_tqdm) as pbar:
             for future in as_completed(futures):
                 original_idx = futures[future]
                 img_name_result, img_result = future.result()

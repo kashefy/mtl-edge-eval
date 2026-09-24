@@ -746,7 +746,8 @@ def evaluate_edge_maps_matlab_identical(pred_dir: str, seg_dir: str,
                                          image_list: Optional[List[str]] = None,
                                          max_edge_pixels: Optional[int] = None,
                                          max_candidate_pairs: Optional[int] = None,
-                                         max_match_product: Optional[int] = None) -> Dict:
+                                         max_match_product: Optional[int] = None,
+                                         disable_tqdm: Optional[bool] = None) -> Dict:
     """
     MATLAB-identical edge map evaluation over a directory of predictions.
 
@@ -820,7 +821,10 @@ def evaluate_edge_maps_matlab_identical(pred_dir: str, seg_dir: str,
 
     eval_start_time = time.time()
 
-    pbar = tqdm(pred_files, desc="[MATLAB-IDENTICAL]", unit="img")
+    # env var lets callers (e.g. batch/SLURM jobs) suppress the bar without code changes
+    if disable_tqdm is None:
+        disable_tqdm = bool(int(os.environ.get('TQDM_DISABLE', '0')))
+    pbar = tqdm(pred_files, desc="[MATLAB-IDENTICAL]", unit="img", disable=disable_tqdm)
     for pred_file in pbar:
         img_start_time = time.time()
 
